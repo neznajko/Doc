@@ -106,7 +106,7 @@
   (let* ((n (split-string str "\\."))      ;; twice escaped .!
 	 (h (string-to-number (nth 0 n)))  ;; hour
 	 (m (string-to-number (nth 1 n)))) ;; minutes
-    (+ m (* mph h))))                       ;; total minutes
+    (+ m (* mph h))))                      ;; total minutes
 ;;;;;;;;;;[;;];;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;[40];;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun unpack-time (str)
@@ -175,6 +175,19 @@
    (>= (- (doc-t2 (nth j A)) time) at-least)))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;[;;];;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;[80];;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; "
+;; 08.00-13.20          Cross            Don
+;; 09.20-10.40     Orthopedic        Charles
+;; 09.30-11.50         Health           John
+;; 09.35-11.55          Brain          Peter
+;; 10.00-17.00         Health          Jerry
+;; 11.00-20.00          Chest        Charles
+;; 16.00-17.25          Cross            Bob
+;; 18.00-20.00            Eye            Don
+;; 19.15-20.40     Orthopedic         Evelyn
+;; 22.00-23.05          Brain         Norman
+;; 00.00-24.00          Clink           Sent
+;; "
 (defun shedule (A)
   "Staät"
   ;; [Init]============
@@ -193,7 +206,7 @@
       ;; i <- i + 1***
       ;; aux.push(rec)
       (setf i (1+ i)
-      	    aux (append aux (list rec)))
+      	    aux (append aux (list rec))) ;; this is wrong!
       ;; [Arvedon?]
       (if (>= i n) (setf flag nil)
 	;; [CkCk]###############
@@ -241,5 +254,39 @@
    (apply 'concat (mapcar #'(lambda (x) (concat (doc-str x) "\n")) A))))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;[;;];;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; log:
-;; cure: testing testing testing
+;; cure: debug shedule algorithm with inpt2
 ;; next: 
+;;;;;;;;;;;;;;;;;;[80];;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; "
+;; 0 00.00-24.00          Clink           Sent
+;; 1 08.00-13.20          Cross            Don
+;; 2 09.20-10.40     Orthopedic        Charles
+;; 3 09.30-11.50         Health           John
+;; 4 09.35-11.55          Brain          Peter
+;; 5 10.00-17.00         Health          Jerry
+;; 6 11.00-20.00          Chest        Charles
+;; 7 16.00-17.25          Cross            Bob
+;; 8 18.00-20.00            Eye            Don
+;; 9 19.15-20.40     Orthopedic         Evelyn
+;;10 22.00-23.05          Brain         Norman
+;;11 00.00-24.00          Clink           Sent
+;; "
+;; ip     = [4. Vait?]
+;; N      = 11
+;; i      = 11
+;; ls     = [("" 0 0 "") 
+;;           (Don 08.00-09.10 Cross)
+;;           (John 09.40-10.50 Health)
+;;           (Charles 11.20-15.30 Chest)
+;;           (Bob 16.00-17.25 Cross)
+;;           (Don 18.00-19.10 Eye)
+;;          ]
+;; t      = 22.00
+;; rec    = ()
+;; y      = 19.40
+;; w      = 0
+;;
+;;
+;;
+;;
+;;
