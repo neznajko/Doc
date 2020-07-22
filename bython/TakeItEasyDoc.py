@@ -1,10 +1,41 @@
 #!/usr/bin/env python3
 # coding = utf-8
-mph    = 60   # minutes per hour
-mindur = 70   # minimum duration
-debug  = True # yeah!
+################################################
+################################################
+######   #   #   #   ###########################
+###### f # u # n # c ###########################
+################################################
+def ck(################################# tscheck
+    u, # user
+    t  # time
+):##############################################
+  """ Ck user's appointment """
+  rec = appt[u.j]
+  # ck visited flag ############################
+  if rec.flag: return False
+  # ck if same Inst. ###########################
+  inst = u.ls[-1].inst # last visited ##########
+  if inst == rec.inst: return False
+  # ck duration ################################
+  if u.dur(t) < mindur: return False
+  return True
+
+def s2m(############## string to minutes
+    s   # time string e.g.: 11.45
+):#####################################_
+  h,m = map(int,s.split('.'))
+  return h*mph + m
+
+def m2s(############## minutes to string
+    m   # minutes e.g.: 570 (09.30)
+):#####################################*
+  n,r = m//mph,m%mph
+  return "{:02d}.{:02d}".format(n,r)
+
 ########################################
-if debug: import pdb
+#######   #   #####   ##################
+####### D # o ##### c ##################
+#######   #   #####   ##################
 ########################################
 class Doc:
   def __init__(#########################
@@ -19,33 +50,36 @@ class Doc:
     self.t2me = t2me
     self.inst = inst
     self.flag = False # visited flag
-  ######################################
+  ####################&#################
   @classmethod
   def unpack(################## 2nd cons
       c,     # rpyna k7ac
       s      # "Bob 08.30-10.00 Cross"
   ):#########/##########################
-    name,time,inst = s.split()
-    t1me,t2me = map(s2m,time.split('-'))
-    return c(name,t1me,t2me,inst)
+    name, time, inst = s.split()
+    t1me, t2me = map(s2m, time.split('-'))
+    return c(name, t1me, t2me, inst)
   
   def __str__(##########################
       self    # thatz
   ):##########/#########################
-    n, i = self.name,self.inst
-    ls = [self.t1me,self.t2me]
-    t = '-'.join(map(m2s,ls))
+    n, i = self.name, self.inst
+    ls = [self.t1me, self.t2me]
+    t = '-'.join(map(m2s, ls))
     return f"{n} {t} {i} {self.flag}"
 
   def dur(##################### duration
-      self,  #                        ..
-      t=None # defaults to t1me
+      self,    #                      ..
+      t = None # defaults to t1me
   ):#######/############################
     if t is None: t = self.t1me
     return self.t2me - t
+
 ########################################
-# This class should be named Vsitr or
-# something, but let's keep as it is.
+####   ####   ####   ###################
+#### U #### s #### r ###################
+####   ####   ####   ###################
+########################################
 class Usr:
   def __init__(#########################
       self,    # thatz
@@ -53,75 +87,74 @@ class Usr:
       j        # appt list index
   ):###########/########################
     self.name = name
-    self.ls   = [Doc("",0,0,"")]
+    self.ls   = [Doc("", 0, 0, "")]
     self.j    = j
     
   def total(######## total visiting time
       self  #
-  ):####################################
+  ):########v###########################
     ls = [rec.dur() for rec in self.ls]
     return sum(ls)
 
   def __str__(self): return self.name
-########################################  
-def s2m(############## string to minutes
-    s   # time string e.g.: 11.45
-):#####################################_
-  h,m = map(int,s.split('.'))
-  return h*mph + m
 
-def m2s(############## minutes to string
-    m   # minutes e.g.: 570 (09.30)
-):#####################################*
-  n,r = m//mph,m%mph
-  return "{:02d}.{:02d}".format(n,r)
+  def next_appt(self):
+    while True:
+      self.j += 1
+      if not appt[self.j].flag: break
 
-def ck(################################# tscheck
-    u, # usr index
-    t  # time
-):#############################################%
-  """ Ck user's appointment """
-  global appt, usr
-  u = usr[u]
-  rec = appt[u.j]
-  # ck visited flag ###########################-
-  if rec.flag: return False
-  # ck if same Inst. ##########################/
-  inst = u.ls[-1].inst # last visited #########*
-  if inst == rec.inst: return False
-  # ck duration ###############################`
-  if u.dur(t) < mindur: return False
-  return True
+################################################
+#######   ######################################
+####### t ##   ##   ##   ##   ##################
+############ a ## s ## k ## s ##################
+################################################
+class Xception(Exception): pass
 
-def Exit(######################################=
+def Exit(#######################################
     t    # time 
-): raise Exception("Done") ####################_
+): raise Xception("Done") ######################
 
-def dOthEViSit(
+def WAit(
     u,
     t
-):
-  pass
-########################################### Task
+): pass
+
+def dOthEViSit(#################################
+    u,         # user
+    t          # time
+):##############################################
+  if ck(u, t): # Ok! raise visited flag
+    appt[u.j].flag = True
+    stk.push(Tsk(WAit(u, t + mindur)))
+  else:
+    u.next_appt() # moo 2 next available appt
+    if appt[u.j].name != "Sent":
+      t = max(t, appt[u.j].t1me)
+      stk.push(Tsk(dOthEViSit(u, t))) 
+
+################################################
+# T ### s ### k ################################
+#   ###   ###   ################################
+################################################
+################################################
 class Tsk:
-  def __init__(################################*
+  def __init__(#################################
       self,    # boom
       func,    # function call
-      args     # last argument should be time
-  ):###########,###############################>
+      args     # argument list
+  ):###########,################################
     self.func = func
     self.args = args
     
-  def run(self): self.func(*self.args) ########=
+  def run(self): self.func(*self.args) #########
     
-  def __lt__(##################################!
+  def __lt__(###################################
       self,  # Who me?
       othr   # Yea yu!
-  ):#########v#################################+
+  ):#########v##################################
     """ If users have same appointment, order by
     total visiting time (TVT). """
     if debug: pdb.set_trace()
-    global usr, appt
     f,t = [],[]
     for ve in self, othr:
       f.append(ve.func) #          function call
@@ -130,54 +163,86 @@ class Tsk:
         f[1] is dOthEViSit):
       u,j,dur = [],[],[]
       for ve in self, othr:
-        u.append(ve.args[0]) #         usr index
-        j.append(usr[u[-1]].j) #      appt index
+        u.append(ve.args[0]) #              user
+        j.append(u[-1].j) #                 appt
         dur.append(appt[j[-1]].dur()) # duration
       if j[0] == j[1]:
         if dur[0] == dur[1]:
-          return u[0] < u[1] #      Aänton first
+          return u[0].name < u[1].name
         else:
           return dur[0] < dur[1]
     return t[0] < t[1]
   
   def __str__(self):
-    pass
+    """ dOthEMAth, Aänton, 08.30
+        WAit, Bobby, 10.40
+        Exit, 21.35
+    """ 
+    ls = [self.func.__name__,
+          m2s(self.args[-1])]
+
+    if self.func is not Exit:
+      ls.insert(1, self.args[0].name)
+
+    return ", ".join(ls)
+
+################################################
+##   #   #   ################# 6ek Tý 6ek geMek?
+## S # T # K ###################################
+##   #   #   ###################################
 ################################################
 class Stk:
   def __init__(self):
-    global appt
-    last = appt[-2] # -1 is Sentinel Guard
-    self.ls = [Tsk(Exit, [last.t2me])]
+    # -1 is Sentinel Güard
+    self.ls = [Tsk(Exit, [appt[-2].t2me])]
     
-  def push(self, tsk):
+  def push(self, tsk): # (insert sort)
     j = len(self.ls) - 1
-    while j > -1 and self.ls[j] > tsk: j -= 1
+    while j > -1 and self.ls[j] > tsk:
+      j -= 1
     self.ls.insert(j + 1, tsk)
+
+#-def cycle():####################################
+#-  global stk
+#-  tsk = stk.pop(0)
+#-  tsk.run()
+#-################################################
+#-def vroo():
+#-  try:
+#-    while True: cycle()
+#-  except Exception as e:
+#-    print(e)
+#-################################################
+
 ################################################
-def cycle():####################################
-  global stk
-  tsk = stk.pop(0)
-  tsk.run()
 ################################################
-def vroo():
-  try:
-    cycle()
-  except Exception as e:
-    print(e)
-################################################
-if __name__ == "__main__":
-  appt = [
-    "Bob    08.00-10.30 Med",
-    "Bill   08.15-09.15 Cure",
-    "John   08.20-09.45 Cure",
-    "Becky  09.00-11.00 Cross",
-    "Aänton 10.00-11.45 Heal",
-    "Sent   00.00-24.00 Clink"
-  ]
-  appt = [""] + list(map(Doc.unpack, appt))
-  usr  = [Usr("Aänton", 1), Usr("Bobby", 2)]
-  stk  = Stk()
+#########   ##############   ###################
+####   ## l ############## b ##   ############   
+#### g ########   ############# a ############ l 
+############### o ##############################
+mph    = 60    # minutes per hour
+mindur = 70    # minimum duration
+debug  = True  # yeah!
+########################################
+if debug: import pdb
+appt   = [
+  "Bob    08.00-10.30 Med",
+  "Bill   08.15-09.15 Cure",
+  "John   08.20-09.45 Cure",
+  "Becky  09.00-11.00 Cross",
+  "Aänton 10.00-11.45 Heal",
+  "Sent   00.00-24.00 Clink"
+]
+appt = [""] + list(map(Doc.unpack, appt))
+usr  = [Usr("Aänton", 1), Usr("Bobby", 2)]
+if debug:
+  print("[appt]", *appt[1:-1], sep='\n')
+  print("[usr]", *usr, sep='\n')
+#  stk  = Stk()
+#  stk.push(Tsk(dOthEViSit, [0, 480]))
+#  stk.push(Tsk(dOthEViSit, [1, 495]))
+#  print(*stk.ls, sep='\n')
 #  vroo()
 ################################################
-# cure: test Stk
-# next: dOthEViSit
+# cure:
+# next:
