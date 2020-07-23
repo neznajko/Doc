@@ -1,37 +1,4 @@
 #!/usr/bin/env python3
-# coding = utf-8
-################################################
-################################################
-######   #   #   #   ###########################
-###### f # u # n # c ###########################
-################################################
-def ck(################################# tscheck
-    u, # user
-    t  # time
-):##############################################
-  """ Ck user's appointment """
-  rec = appt[u.j]
-  # ck visited flag ############################
-  if rec.flag: return False
-  # ck if same Inst. ###########################
-  inst = u.ls[-1].inst # last visited ##########
-  if inst == rec.inst: return False
-  # ck duration ################################
-  if u.dur(t) < mindur: return False
-  return True
-
-def s2m(############## string to minutes
-    s   # time string e.g.: 11.45
-):#####################################_
-  h,m = map(int,s.split('.'))
-  return h*mph + m
-
-def m2s(############## minutes to string
-    m   # minutes e.g.: 570 (09.30)
-):#####################################*
-  n,r = m//mph,m%mph
-  return "{:02d}.{:02d}".format(n,r)
-
 ########################################
 #######   #   #####   ##################
 ####### D # o ##### c ##################
@@ -96,7 +63,15 @@ class Usr:
     ls = [rec.dur() for rec in self.ls]
     return sum(ls)
 
-  def __str__(self): return self.name
+  def __str__(self):
+    """ Dump name and visited records """
+    ls = []
+    for rec in self.ls[1:]: # discard the dummy record
+      s = rec.__str__()
+      # discard visited flag
+      ls.append(' '.join(s.split()[:-1]))
+    ls.insert(0, self.name)
+    return '\n'.join(ls)
 
   def next_appt(self):
     while True:
@@ -114,10 +89,25 @@ def Exit(#######################################
     t    # time 
 ): raise Xception("Done") ######################
 
-def WAit(
-    u,
-    t
-): pass
+def WAit(#######################################
+    u,   # uza                            
+    t    # tme
+):##############################################
+  i = u.j       # backup current record index
+  u.next_appt() # update u.j
+  w = 0
+  if appt[u.j].name != "Sent":
+    if t + travel < appt[u.j].t1me:
+      # arrive exactly at t1me:
+      w1 = appt[u.j].t1me - travel - t
+      w2 = appt[  i].t2me - t # full visit
+      w = min(w1, w2)
+    stk.push(Tsk(dOthEViSit, [u, t + w + travel]))
+  u.ls.append(Doc(########### Take it easy Doc:)
+    appt[i].name,
+    t - mindur,
+    t + w,
+    appt[i].inst))
 
 def dOthEViSit(#################################
     u,         # user
@@ -125,12 +115,12 @@ def dOthEViSit(#################################
 ):##############################################
   if ck(u, t): # Ok! raise visited flag
     appt[u.j].flag = True
-    stk.push(Tsk(WAit(u, t + mindur)))
+    stk.push(Tsk(WAit, [u, t + mindur]))
   else:
     u.next_appt() # moo 2 next available appt
     if appt[u.j].name != "Sent":
       t = max(t, appt[u.j].t1me)
-      stk.push(Tsk(dOthEViSit(u, t))) 
+      stk.push(Tsk(dOthEViSit, [u, t]))
 
 ################################################
 # T ### s ### k ################################
@@ -154,7 +144,6 @@ class Tsk:
   ):#########v##################################
     """ If users have same appointment, order by
     total visiting time (TVT). """
-    if debug: pdb.set_trace()
     f,t = [],[]
     for ve in self, othr:
       f.append(ve.func) #          function call
@@ -187,7 +176,7 @@ class Tsk:
     return ", ".join(ls)
 
 ################################################
-##   #   #   ################# 6ek Tý 6ek geMek?
+##   #   #   ################# 6ek Ty 6ek geMek?
 ## S # T # K ###################################
 ##   #   #   ###################################
 ################################################
@@ -202,28 +191,62 @@ class Stk:
       j -= 1
     self.ls.insert(j + 1, tsk)
 
-#-def cycle():####################################
-#-  global stk
-#-  tsk = stk.pop(0)
-#-  tsk.run()
-#-################################################
-#-def vroo():
-#-  try:
-#-    while True: cycle()
-#-  except Exception as e:
-#-    print(e)
-#-################################################
+  def pop(self): return self.ls.pop(0)
 
 ################################################
 ################################################
-#########   ##############   ###################
-####   ## l ############## b ##   ############   
-#### g ########   ############# a ############ l 
-############### o ##############################
+######   #   #   #   ###########################
+###### f # u # n # c ###########################
+################################################
+def ck(################################# tscheck
+    u, # user
+    t  # time
+):##############################################
+  """ Ck user's appointment """
+  rec = appt[u.j]
+  # ck visited flag ############################
+  if rec.flag: return False
+  # ck if same Inst. ###########################
+  inst = u.ls[-1].inst # last visited ##########
+  if inst == rec.inst: return False
+  # ck duration ################################
+  if rec.dur(t) < mindur: return False
+  return True
+
+def s2m(############## string to minutes
+    s   # time string e.g.: 11.45
+):#####################################_
+  h,m = map(int,s.split('.'))
+  return h*mph + m
+
+def m2s(############## minutes to string
+    m   # minutes e.g.: 570 (09.30)
+):#####################################*
+  n,r = m//mph,m%mph
+  return "{:02d}.{:02d}".format(n,r)
+
+def cycle():####################################
+  tsk = stk.pop()
+  tsk.run()
+
+def vroo():#####################################
+  try:
+    while True:
+      cycle()
+  except Xception as x:
+    print(x)
+
+########################################################
+########################################################
+#########   ##############   ###########################
+####   ## l ############## b ##   ############   #######
+#### g ########   ############# a ############ l #######
+############### o ######################################
 mph    = 60    # minutes per hour
 mindur = 70    # minimum duration
-debug  = True  # yeah!
-########################################
+travel = 30    # time between 2 consec appts
+debug  = False # yeah!
+########################################################
 if debug: import pdb
 appt   = [
   "Bob    08.00-10.30 Med",
@@ -233,16 +256,17 @@ appt   = [
   "Aänton 10.00-11.45 Heal",
   "Sent   00.00-24.00 Clink"
 ]
+# add dummy [0] record:
 appt = [""] + list(map(Doc.unpack, appt))
 usr  = [Usr("Aänton", 1), Usr("Bobby", 2)]
-if debug:
-  print("[appt]", *appt[1:-1], sep='\n')
-  print("[usr]", *usr, sep='\n')
-#  stk  = Stk()
-#  stk.push(Tsk(dOthEViSit, [0, 480]))
-#  stk.push(Tsk(dOthEViSit, [1, 495]))
-#  print(*stk.ls, sep='\n')
-#  vroo()
-################################################
-# cure:
+stk  = Stk()
+stk.push(Tsk(dOthEViSit, [usr[0], appt[1].t1me]))
+stk.push(Tsk(dOthEViSit, [usr[1], appt[2].t1me]))
+print("[  appt ]", *appt[1:-1], sep='\n')
+print("[  stk  ]", *stk.ls, sep='\n')
+if debug: pdb.set_trace()
+vroo()
+print("[  usr  ]", *usr, sep='\n')
+########################################################
+# cure: read appt from input file
 # next:

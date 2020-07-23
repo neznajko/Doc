@@ -8,4 +8,4 @@ Take it easy Doc, [[ clink ]](https://ioinformatics.org/files/ioi1991round2.pdf)
 
 ![Loading... 672.png](pix/672.png)
 
-[{ The Cinematic Orchestra - Melody/Dawn/The Awakening of a Woman }](https://youtu.be/APLHbS88duw)
+[{ Melody/ Dawn/ The Awakening of a Woman }](https://youtu.be/APLHbS88duw)
