@@ -42,6 +42,11 @@ class Doc:
     if t is None: t = self.t1me
     return self.t2me - t
 
+  def __lt__(self, othr):
+    self_time = (self.t1me, self.t2me)
+    othr_time = (othr.t1me, othr.t2me)
+    return self_time < othr_time
+
 ########################################
 ####   ####   ####   ###################
 #### U #### s #### r ###################
@@ -248,6 +253,18 @@ travel = 30    # time between 2 consec appts
 debug  = False # yeah!
 ########################################################
 if debug: import pdb
+############################################## Test Zone
+import sys
+buf  = sys.stdin.read() # redirect input file
+appt = buf.split('\n') # make a list
+appt = list(filter(None, appt)) # discard empty lmnts
+appt = list(map(Doc.unpack, appt))
+appt.sort()
+# add dummy record and sentinel, regroup input files
+# run the program with the one bellow
+print("[  appt ]", *appt, sep='\n')
+sys.exit()
+
 appt   = [
   "Bob    08.00-10.30 Med",
   "Bill   08.15-09.15 Cure",
@@ -268,5 +285,5 @@ if debug: pdb.set_trace()
 vroo()
 print("[  usr  ]", *usr, sep='\n')
 ########################################################
-# cure: read appt from input file
+# cure:
 # next:
