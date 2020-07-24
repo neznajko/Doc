@@ -92,7 +92,7 @@
 ;; appointment lists. Evaluation: One medical visitor 45 points Two
 ;; medical visitor 45 points Jury 10 points (elegance, clarity,
 ;; progr. style)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; MEDVREC
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;[56]
 (defun file-string (filename)
   "Get filename contents as string."
@@ -110,7 +110,7 @@
 ;;;;;;;;;;[;;];;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;[40];;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun unpack-time (str)
-  "interval string 2 minutes' list"
+  "interval string 2 minutes list"
   (let ((ls (split-string str "-")))
     (mapcar 'str2min ls)))
 ;;;;;;;;;;;;;;;;;;;[;;];;;;;;;;;;;;;;;;;

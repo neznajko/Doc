@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import sys
 ########################################
 #######   #   #####   ##################
 ####### D # o ##### c ##################
@@ -71,7 +72,7 @@ class Usr:
   def __str__(self):
     """ Dump name and visited records """
     ls = []
-    for rec in self.ls[1:]: # discard the dummy record
+    for rec in self.ls[1:]:
       s = rec.__str__()
       # discard visited flag
       ls.append(' '.join(s.split()[:-1]))
@@ -241,6 +242,19 @@ def vroo():#####################################
   except Xception as x:
     print(x)
 
+################################################
+def load():
+  """ load appt from stdin """
+  buf  = sys.stdin.read() # redirect input file
+  appt = buf.split('\n') # make a list
+  appt = list(filter(None, appt)) # discard empty lmnts
+  appt = list(map(Doc.unpack, appt))
+  appt.sort()
+  # add dummy record and sentinel guard
+  appt = [[]] + appt
+  appt.append(Doc.unpack("Sent 00.00-24.00 Clink"))
+  return appt
+
 ########################################################
 ########################################################
 #########   ##############   ###########################
@@ -254,27 +268,7 @@ debug  = False # yeah!
 ########################################################
 if debug: import pdb
 ############################################## Test Zone
-import sys
-buf  = sys.stdin.read() # redirect input file
-appt = buf.split('\n') # make a list
-appt = list(filter(None, appt)) # discard empty lmnts
-appt = list(map(Doc.unpack, appt))
-appt.sort()
-# add dummy record and sentinel, regroup input files
-# run the program with the one bellow
-print("[  appt ]", *appt, sep='\n')
-sys.exit()
-
-appt   = [
-  "Bob    08.00-10.30 Med",
-  "Bill   08.15-09.15 Cure",
-  "John   08.20-09.45 Cure",
-  "Becky  09.00-11.00 Cross",
-  "Aänton 10.00-11.45 Heal",
-  "Sent   00.00-24.00 Clink"
-]
-# add dummy [0] record:
-appt = [""] + list(map(Doc.unpack, appt))
+appt = load()
 usr  = [Usr("Aänton", 1), Usr("Bobby", 2)]
 stk  = Stk()
 stk.push(Tsk(dOthEViSit, [usr[0], appt[1].t1me]))
