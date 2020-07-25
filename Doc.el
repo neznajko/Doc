@@ -123,19 +123,9 @@
 	 (inst (nth 2 ls)))
     (list name (nth 0 time) (nth 1 time) inst)))
 ;;;;;;;;;;;;;;;;;;;;;[;;];;;;;;;;;;;;;;;;;;;;;;;
-;;[64];;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun cons-appt (filename)
-  "Construct an appointment list: load, sort, add Sentinel"
-  (let* ((buf (file-string filename))
-	 (buf (split-string buf "\n" t))
-	 (buf (mapcar 'unpack-line buf))
-	 (buf (mapcar #'(lambda (x) (apply 'cons-doc x)) buf))
-	 (buf (mrg-sort buf)))
-    (append buf (list (cons-doc "Sent" 0 1440 "Clink")))))
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;[;;];;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;[40]
 (defun cmp (x y)
-  "[|8("
+  "=|8(_,"
   (cond
    ((<  (doc-t1 x) (doc-t1 y)) t)
    ((>  (doc-t1 x) (doc-t1 y)) nil)
@@ -162,20 +152,37 @@
 	    r (seq-drop x n))
       (mrg (mrg-sort l) (mrg-sort r)))))
 ;;;;;;;;;[;;];;;;;;;;;;;;;;;;;;;;;;;;;;'
+;;[64];;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun cons-appt (filename)
+  "Construct an appointment list: load, sort, add Sentinels"
+  (let* ((buf (file-string filename))
+	 (buf (split-string buf "\n" t))
+	 (buf (mapcar 'unpack-line buf))
+	 (buf (mapcar #'(lambda (x) (apply 'cons-doc x)) buf))
+	 (buf (mrg-sort buf))
+         (grd (list (cons-doc "Sent" 0 1440 "Clink")))
+         (buf (append buf grd)))
+    (append grd buf)))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;[;;];;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;[72];;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun ck (A j time aux)
-  "Duration and last (aux) Inst. ck"
+(defun ck (A j x ls)
+  ;; A  - appt list
+  ;; j  - rec index
+  ;; x  - time
+  ;; ls - visited list
+  "Duration and last visited Inst. ck"
   (and
    (not
     ;; Rule 3 forbits two consequtive visits in same institute. To avoid
-    ;; null ck put dummy record with "" inst at front of aux.
+    ;; null ck put dummy record at front of ls.
     (string=
      (doc-inst (nth j A))
-     (doc-inst (car (last aux)))))
-   (>= (- (doc-t2 (nth j A)) time) at-least)))
+     (doc-inst (car (last ls)))))
+   (>= (- (doc-t2 (nth j A)) x) at-least)))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;[;;];;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;[80];;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; "
+;; 00.00-24.00          Clink           Sent
 ;; 08.00-13.20          Cross            Don
 ;; 09.20-10.40     Orthopedic        Charles
 ;; 09.30-11.50         Health           John
@@ -188,50 +195,60 @@
 ;; 22.00-23.05          Brain         Norman
 ;; 00.00-24.00          Clink           Sent
 ;; "
-(defun shedule (A)
+(defun shedl (A)
   "Staät"
-  ;; [Init]============
-  ;; ==================
-  ;; N «< len(A) - 1===
-  ;; offset «< 0=======
-  ;; i <« -1===========
-  ;; rec <« ["" 0 0 ""]
-  ;; aux <« ()=========
-  (let ((n (- (length A) 1))
-	(offset 0) (i -1)
-	(rec (cons-doc "" 0 0 ""))
-	(aux ()) (flag t) (x) (y) (z))
-    (while flag
-      ;; [Clck next]**
-      ;; i <- i + 1***
-      ;; aux.push(rec)
-      (setf i (1+ i)
-      	    aux (append aux (list rec))) ;; this is wrong!
-      ;; [Arvedon?]
-      (if (>= i n) (setf flag nil)
-	;; [CkCk]###############
-	;; x <- A[i].t1 + offset
-	;; ck(A, i, x, aux)#####
-	(setf x (+ offset (doc-t1 (nth i A))))
-	(if (not (ck A i x aux)) (setf offset 0)
-	  ;; [New rec]-------------------------------
-	  ;; rec <- [A[i].name, x, x + 70, A[i].inst]
-	  ;; x <- x + 70-----------------------------
-	  ;; y <- x + 30-----------------------------
-	  (setf rec (cons-doc (doc-name (nth i A)) x (+ x at-least)
-			      (doc-inst (nth i A)))
-		x (+ x at-least)
-		y (+ x betwe-en))
-	  ;; [Wait?]
-	  (if (not (< y (doc-t1 (nth (1+ i) A))))
-	      (setf offset (- y (doc-t1 (nth (1+ i) A))))
-	    ;; [yeah!]
-	    (setf z (min 
-		     (- (doc-t2 (nth i A)) x)
-		     (- (doc-t1 (nth (1+ i) A)) y))
-		  offset 0)
-	    (cl-incf (doc-t2 rec) z)))))
-    (cdr aux)))
+  ;; [0.iNit]
+  ;;  N|len(A)
+  ;;  t|A[1].t¹
+  ;;  i|0
+  ;; ls|[("" 0 0 "")]
+  (let ((n (1- (length A)))
+        (x (doc-t1 (nth 1 A)))
+        (i 0)
+        (ls (list (cons-doc "" 0 0 "")))
+        (rec)
+        (y)
+        (w))
+    (catch 'break
+      (while t
+        (catch 'continue
+          ;; [1.ARVEdON?]
+          ;; i++
+          ;; { i < N?} No: >>> EXIT >>>
+          (setf i (1+ i))
+          (if (>= i n) (throw 'break t))
+          ;; [2.ck]
+          ;; { t < A[i].t¹?} yea: t|A[i].t¹
+          ;; { ck(A, i, t, ls) } No: goto [1]
+          (if (< x (doc-t1 (nth i A)))
+              (setf x (doc-t1 (nth i A))))
+          (if (not (ck A i x ls)) (throw 'continue t))
+          ;; [3.cons]
+          ;; B|(A[i].nom, t, ?, A[i].inst)
+          ;; t += 70
+          (setf rec (cons-doc (doc-name (nth i A)) x 0
+                              (doc-inst (nth i A))))
+          (setf x (+ at-least x))
+          ;; [4.Vait?]
+          ;; y|t + 30
+          ;; { y < A[i + 1].t¹?}
+          (setf y (+ x betwe-en))
+          (if (>= y (doc-t1 (nth (1+ i) A)))
+              ;; [5.Immediately]
+              ;; No) w|0
+              (setf w 0)
+            ;; [6.Tik-Tak]
+            ;; yea) w|min(A[i].t² - t, A[i+1].t¹ - y)
+            (setf w (min (- (doc-t2 (nth i A)) x)
+                         (- (doc-t1 (nth (1+ i) A)) y))))
+          ;; [7.Push]
+          ;; B.t²|t + w
+          ;; ls.push(B)
+          ;; t|w + y
+          (setf (doc-t2 rec) (+ x w)
+                ls (append ls (list rec))
+                x (+ w y)))))
+    ls))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;[;;];;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;[48];;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun min2str (m)
@@ -252,41 +269,7 @@
   "yeah\yeah!"
   (message-box
    (apply 'concat (mapcar #'(lambda (x) (concat (doc-str x) "\n")) A))))
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;[;;];;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;[;;];;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; log:
-;; cure: debug shedule algorithm with inpt2
+;; cure: 
 ;; next: 
-;;;;;;;;;;;;;;;;;;[80];;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; "
-;; 0 00.00-24.00          Clink           Sent
-;; 1 08.00-13.20          Cross            Don
-;; 2 09.20-10.40     Orthopedic        Charles
-;; 3 09.30-11.50         Health           John
-;; 4 09.35-11.55          Brain          Peter
-;; 5 10.00-17.00         Health          Jerry
-;; 6 11.00-20.00          Chest        Charles
-;; 7 16.00-17.25          Cross            Bob
-;; 8 18.00-20.00            Eye            Don
-;; 9 19.15-20.40     Orthopedic         Evelyn
-;;10 22.00-23.05          Brain         Norman
-;;11 00.00-24.00          Clink           Sent
-;; "
-;; ip     = [4. Vait?]
-;; N      = 11
-;; i      = 11
-;; ls     = [("" 0 0 "") 
-;;           (Don 08.00-09.10 Cross)
-;;           (John 09.40-10.50 Health)
-;;           (Charles 11.20-15.30 Chest)
-;;           (Bob 16.00-17.25 Cross)
-;;           (Don 18.00-19.10 Eye)
-;;          ]
-;; t      = 22.00
-;; rec    = ()
-;; y      = 19.40
-;; w      = 0
-;;
-;;
-;;
-;;
-;;
