@@ -154,35 +154,27 @@
 ;;;;;;;;;[;;];;;;;;;;;;;;;;;;;;;;;;;;;;'
 ;;[64];;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun cons-appt (filename)
-  "Construct an appointment list: load, sort, add Sentinels"
+  "Construct an appointment list"
   (let* ((buf (file-string filename))
 	 (buf (split-string buf "\n" t))
 	 (buf (mapcar 'unpack-line buf))
-	 (buf (mapcar #'(lambda (x) (apply 'cons-doc x)) buf))
-	 (buf (mrg-sort buf))
-         (grd (list (cons-doc "Sent" 0 1440 "Clink")))
-         (buf (append buf grd)))
-    (append grd buf)))
+	 (buf (mapcar #'(lambda (x) (apply 'cons-doc x)) buf)))
+    (mrg-sort buf)))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;[;;];;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;[72];;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun ck (A j x ls)
-  ;; A  - appt list
-  ;; j  - rec index
-  ;; x  - time
-  ;; ls - visited list
-  "Duration and last visited Inst. ck"
-  (and
-   (not
-    ;; Rule 3 forbits two consequtive visits in same institute. To avoid
-    ;; null ck put dummy record at front of ls.
-    (string=
-     (doc-inst (nth j A))
-     (doc-inst (car (last ls)))))
-   (>= (- (doc-t2 (nth j A)) x) at-least)))
+(defun ckck (a x l)
+  ;; a - appt record
+  ;; x - time
+  ;; l - last visited record
+  "Duration and Institute"
+  (if (< (- (doc-t2 a) x) at-least)
+      -1
+    (if (string= (doc-inst a) (doc-inst l)) 
+        0
+      1)))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;[;;];;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;[80];;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; "
-;; 00.00-24.00          Clink           Sent
 ;; 08.00-13.20          Cross            Don
 ;; 09.20-10.40     Orthopedic        Charles
 ;; 09.30-11.50         Health           John
@@ -193,54 +185,52 @@
 ;; 18.00-20.00            Eye            Don
 ;; 19.15-20.40     Orthopedic         Evelyn
 ;; 22.00-23.05          Brain         Norman
-;; 00.00-24.00          Clink           Sent
 ;; "
 (defun shedl (A)
   "Staät"
   ;; [0.iNit]
-  ;;  N|len(A)
-  ;;  t|A[1].t¹
-  ;;  i|0
+  ;;  x|A[0].t¹
   ;; ls|[("" 0 0 "")]
-  (let ((n (1- (length A)))
-        (x (doc-t1 (nth 1 A)))
-        (i 0)
+  (let ((x (doc-t1 (car A)))
         (ls (list (cons-doc "" 0 0 "")))
-        (rec)
-        (y)
-        (w))
+        (rec) (y) (w) (cure) (next) (ck))
     (catch 'break
       (while t
         (catch 'continue
           ;; [1.ARVEdON?]
-          ;; i++
-          ;; { i < N?} No: >>> EXIT >>>
-          (setf i (1+ i))
-          (if (>= i n) (throw 'break t))
-          ;; [2.ck]
-          ;; { t < A[i].t¹?} yea: t|A[i].t¹
-          ;; { ck(A, i, t, ls) } No: goto [1]
-          (if (< x (doc-t1 (nth i A)))
-              (setf x (doc-t1 (nth i A))))
-          (if (not (ck A i x ls)) (throw 'continue t))
+          ;; cure|pop(A)
+          ;; next|A[0]
+          ;; «A.empty¿» yee: >>> exit >>>
+          (setf cure (pop A)
+                next (car A))
+          (if (not cure) (throw 'break t))
+          ;; [2.ckck]
+          ;; «x < cure.t¹?» yea: x|cure.t¹
+          ;; «ckck(cure, x, ls[-1])¿» No: goto [1]
+          (if (< x (doc-t1 cure)) (setf x (doc-t1 cure)))
+          (setf ck (ckck cure x (car (last ls))))
+          (if (< ck 1)
+              (progn
+                (if (= ck 0) (push cure (cdr A)))
+                (throw 'continue t)))
           ;; [3.cons]
-          ;; B|(A[i].nom, t, ?, A[i].inst)
-          ;; t += 70
-          (setf rec (cons-doc (doc-name (nth i A)) x 0
-                              (doc-inst (nth i A))))
+          ;; B|(cure.nom, x, ?, cure.inst)
+          ;; x += 70
+          (setf rec (cons-doc (doc-name cure) x -1
+                              (doc-inst cure)))
           (setf x (+ at-least x))
           ;; [4.Vait?]
-          ;; y|t + 30
-          ;; { y < A[i + 1].t¹?}
+          ;; y|x + 30
+          ;; { next and y < next.t¹¿ }
           (setf y (+ x betwe-en))
-          (if (>= y (doc-t1 (nth (1+ i) A)))
+          (if (or (not next) (>= y (doc-t1 next)))
               ;; [5.Immediately]
               ;; No) w|0
               (setf w 0)
             ;; [6.Tik-Tak]
-            ;; yea) w|min(A[i].t² - t, A[i+1].t¹ - y)
-            (setf w (min (- (doc-t2 (nth i A)) x)
-                         (- (doc-t1 (nth (1+ i) A)) y))))
+            ;; yea) w|min(cure.t² - t, next.t¹ - y)
+            (setf w (min (- (doc-t2 cure) x)
+                         (- (doc-t1 next) y))))
           ;; [7.Push]
           ;; B.t²|t + w
           ;; ls.push(B)
@@ -258,7 +248,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;56
 (defun doc-str (rec)
   "wtf is prety printing?"
-  (format "%s-%s %14s %14s"
+  (format "%s-%s %15s %15s"
 	  (min2str (doc-t1 rec))
 	  (min2str (doc-t2 rec))
 	  (doc-inst rec)
@@ -267,9 +257,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;[72];;;;;;;;
 (defun dunf-docs (A)
   "yeah\yeah!"
-  (message-box
-   (apply 'concat (mapcar #'(lambda (x) (concat (doc-str x) "\n")) A))))
+  (concat
+   (apply 'concat (mapcar #'(lambda (x) (concat "\n" (doc-str x))) A))
+   "\n"))  
 ;;;;;;;;;;;;;;;;;;;[;;];;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(setq A (cons-appt "input/input1"))
+(message "%s" (dunf-docs (cdr (shedl A))))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; log:
-;; cure: 
-;; next: 
+;; cure:
+;; next:
