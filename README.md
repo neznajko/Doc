@@ -10,3 +10,5 @@ Take it easy Doc, [[ clink ]](https://ioinformatics.org/files/ioi1991round2.pdf)
 
 ![](pix/bayhuy.png)
 
+[{ Escape }](https://youtu.be/aBGAYLLkgHk)
+

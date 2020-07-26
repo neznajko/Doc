@@ -93,6 +93,28 @@
 ;; medical visitor 45 points Jury 10 points (elegance, clarity,
 ;; progr. style)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Yee, Ok, The problem seems quite complicated especially for the 
+;; 2nd scenario, but in principle it can be solved for arbitrary number
+;; of visitors with the method I've first saw in Knuth Vol1 (282-298.)
+;; namely the elevator problem. We have a cycle line and we throw on
+;; the waiting stack task sorted by time.
+;;
+;; I've decided to write my fyorst program in elisp and by far this is
+;; the most beautiful language I've seen. Ok here only the case of one
+;; visitor is considered, in this simple case we can write classical
+;; straightforward algorithm (shedl). The only tricky part is how to 
+;; handle consecutive doctors from same institute. In the solution
+;; presented above Jerry from Health is visited after Charles form
+;; Chest despite that he has earlier opening time.
+;;
+;; In the file TakeItEasyDoc.py is the second part. Don't know the
+;; the name, but this is quite a clever method and a general approach
+;; to similar problems.
+;;
+;; To run this program load in emacs and type M-x eval-buffer, for
+;; the python program redirect the input e.g:
+;; ./TakeItEasyDoc.py <input/input1
+;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;[56]
 (defun file-string (filename)
   "Get filename contents as string."
